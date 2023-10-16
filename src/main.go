@@ -1,6 +1,6 @@
 package main
 
-import "github.com/Thwani47/query-assistant/cmd"
+import cmd "github.com/Thwani47/query-assistant/cmd/qa"
 
 func main() {
 	cmd.Execute()
