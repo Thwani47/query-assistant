@@ -1,9 +1,11 @@
-package qa
+package cmd
 
 import (
 	"fmt"
 	"os"
 
+	"github.com/Thwani47/query-assistant/cmd/generate"
+	"github.com/Thwani47/query-assistant/cmd/version"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +18,11 @@ With the power of AI, it can help you streamline everyday tasks and answer your 
 Whether you need to create code, launch applications, stop music playback, retrieve upcoming meeting details, or tackle various other tasks, Query Assistant is here to assist. 
 Simply type 'qa' in your terminal to engage with your digital helper. 
 Empower your command line with the capabilities of Query Assistant and make your daily computing experience more efficient and user-friendly.`,
+}
+
+func init() {
+	rootCmd.AddCommand(generate.GenerateCmd)
+	rootCmd.AddCommand(version.VersionCmd)
 }
 
 func Execute() {

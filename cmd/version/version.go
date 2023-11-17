@@ -1,4 +1,4 @@
-package qa
+package version
 
 import (
 	"fmt"
@@ -6,11 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	rootCmd.AddCommand(versionCmd)
-}
-
-var versionCmd = &cobra.Command{
+var VersionCmd = &cobra.Command{
 	Use:     "version",
 	Aliases: []string{"v"},
 	Short:   "Print the version number of Query Assistant",

@@ -1,4 +1,4 @@
-package qa
+package generate
 
 import (
 	"context"
@@ -9,10 +9,10 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(generationCommand)
+
 }
 
-var generationCommand = &cobra.Command{
+var GenerateCmd = &cobra.Command{
 	Use:     "generate",
 	Short:   "Generation an application or a code snippet",
 	Aliases: []string{"g"},
