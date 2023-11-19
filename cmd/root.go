@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Thwani47/query-assistant/cmd/config"
 	"github.com/Thwani47/query-assistant/cmd/generate"
 	"github.com/Thwani47/query-assistant/cmd/version"
 	"github.com/spf13/cobra"
@@ -23,6 +24,7 @@ Empower your command line with the capabilities of Query Assistant and make your
 func init() {
 	rootCmd.AddCommand(generate.GenerateCmd)
 	rootCmd.AddCommand(version.VersionCmd)
+	rootCmd.AddCommand(config.ConfigCmd)
 }
 
 func Execute() {

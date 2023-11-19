@@ -14,7 +14,7 @@ func init() {
 
 var GenerateCmd = &cobra.Command{
 	Use:     "generate",
-	Short:   "Generation an application or a code snippet",
+	Short:   "Generate an application or a code snippet",
 	Aliases: []string{"g"},
 	Run: func(cmd *cobra.Command, args []string) {
 		client := openai.NewClient("") // TODO find a way to pass the key here (configure the CLI). also move this to a seperate file
