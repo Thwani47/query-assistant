@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -9,14 +10,23 @@ import (
 	"github.com/spf13/viper"
 )
 
-var configFile string
+type PromptType int
 
-type promptContent struct {
-	errorMessage string
-	label        string
+const (
+	TextPrompt     PromptType = 0
+	PasswordPrompt PromptType = 1
+	SelectPrompt   PromptType = 2
+)
+
+type promptItem struct {
+	ID            string
+	Label         string
+	Value         string
+	SelectOptions []string
+	PromptType    PromptType
 }
 
-var configItems = map[string]string{"Open AI API Key": "OpenAI_APIKey"}
+var configFile string
 
 // configCmd represents the config command
 var ConfigCmd = &cobra.Command{
@@ -24,21 +34,26 @@ var ConfigCmd = &cobra.Command{
 	Short: "Configure QA",
 	Long:  `Configure the settings for QA. For example, you can set the default model to use.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		configItemSelectPc := promptContent{
-			errorMessage: "Please select item to configure",
-			label:        "Configuration Item",
+		configItems := []*promptItem{
+			{
+				ID:    "OpenAI_APIKey",
+				Label: "Open AI API Key",
+			},
 		}
 
-		configItem := prompForSelect(configItemSelectPc)
+		_, err := configureSettings("Configure QA", 0, configItems)
 
-		configItemInputPc := promptContent{
-			errorMessage: fmt.Sprintf("Please enter a valid %s", configItem),
-			label:        configItem,
+		if err != nil {
+			fmt.Printf("Prompt failed %v\n", err)
+			os.Exit(1)
 		}
 
-		inputConfigItem := promptForInput(configItemInputPc)
-
-		fmt.Printf("You chose %s for %s", inputConfigItem, configItems[inputConfigItem])
+		for _, config := range configItems {
+			if config.Value != "" {
+				viper.Set(config.ID, config.Value)
+			}
+		}
+		viper.WriteConfigAs("qa.config.yaml")
 	},
 }
 
@@ -74,26 +89,90 @@ func initConfig() {
 	}
 }
 
-func prompForSelect(pc promptContent) string {
+func configureSettings(promptLabel string, startingIndex int, items []*promptItem) (bool, error) {
+	doneID := "Done"
+
+	if len(items) > 0 && items[0].ID != doneID {
+		items = append([]*promptItem{{ID: doneID, Label: "Done"}}, items...)
+	}
+
+	templates := &promptui.SelectTemplates{
+		Label:    "{{ . }}?",
+		Active:   "\U0001F336 {{ .Label | cyan }}",
+		Inactive: "  {{ .Label | cyan }}",
+		Selected: "\U0001F336 {{ .Label | red | cyan }}",
+	}
+
 	prompt := promptui.Select{
-		Label: pc.label,
-		Items: []string{"Open AI API Key", "Quit"},
+		Label:        promptLabel,
+		Items:        items,
+		Size:         4,
+		Templates:    templates,
+		HideSelected: true,
+		CursorPos:    startingIndex,
+	}
+
+	selectedIndex, _, err := prompt.Run()
+
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return false, err
+	}
+
+	selectedItem := items[selectedIndex]
+
+	if selectedItem.ID == doneID {
+		return true, nil
+	}
+
+	var promptResponse string
+
+	if selectedItem.PromptType == TextPrompt || selectedItem.PromptType == PasswordPrompt {
+		promptResponse, err = promptForInput(*selectedItem)
+
+		if err != nil {
+			fmt.Printf("Prompt failed %v\n", err)
+			return false, err
+		}
+
+		items[selectedIndex].Value = promptResponse
+	}
+
+	if selectedItem.PromptType == SelectPrompt {
+		promptResponse, err = prompForSelect(*selectedItem)
+
+		if err != nil {
+			fmt.Printf("Prompt failed %v\n", err)
+			return false, err
+		}
+
+		items[selectedIndex].Value = promptResponse
+	}
+
+	return configureSettings(promptLabel, selectedIndex, items)
+}
+
+func prompForSelect(item promptItem) (string, error) {
+	prompt := promptui.Select{
+		Label:        item.Label,
+		Items:        item.SelectOptions,
+		HideSelected: true,
 	}
 
 	_, result, err := prompt.Run()
 
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fmt.Printf("Prompt failed %v\n", err)
+		return "", err
 	}
 
-	return result
+	return result, nil
 }
 
-func promptForInput(pc promptContent) string {
+func promptForInput(item promptItem) (string, error) {
 	validate := func(input string) error {
 		if len(input) <= 0 {
-			return fmt.Errorf(pc.errorMessage)
+			return errors.New("error: input cannot be empty")
 		}
 
 		return nil
@@ -107,17 +186,22 @@ func promptForInput(pc promptContent) string {
 	}
 
 	prompt := promptui.Prompt{
-		Label:     pc.label,
-		Templates: templates,
-		Validate:  validate,
+		Label:       item.Label,
+		Templates:   templates,
+		Validate:    validate,
+		HideEntered: true,
+	}
+
+	if item.PromptType == PasswordPrompt {
+		prompt.Mask = '*'
 	}
 
 	result, err := prompt.Run()
 
 	if err != nil {
-		fmt.Printf("Failed to read input for %s: %s", pc.label, err)
-		os.Exit(1)
+		fmt.Printf("Prompt failed:%v\n", err)
+		return "", err
 	}
 
-	return result
+	return result, nil
 }
