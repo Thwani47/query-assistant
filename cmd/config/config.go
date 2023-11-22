@@ -5,26 +5,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Thwani47/query-assistant/cmd/consts"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-type PromptType int
-
-const (
-	TextPrompt     PromptType = 0
-	PasswordPrompt PromptType = 1
-	SelectPrompt   PromptType = 2
-)
-
-type promptItem struct {
-	ID            string
-	Label         string
-	Value         string
-	SelectOptions []string
-	PromptType    PromptType
-}
 
 var configFile string
 var configFileName string = "qa.config.yaml"
@@ -35,9 +20,9 @@ var ConfigCmd = &cobra.Command{
 	Short: "Configure QA",
 	Long:  `Configure the settings for QA. For example, you can set the default model to use.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		configItems := []*promptItem{
+		configItems := []*consts.PromptItem{
 			{
-				ID:    "OpenAI_APIKey",
+				ID:    consts.OpenAI_APIKey,
 				Label: "Open AI API Key",
 			},
 		}
@@ -78,23 +63,26 @@ func initConfig() {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
+		viper.SetConfigName("qa.config")
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".qa")
+
 	}
 
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	} else {
+		fmt.Println("No config file found. Creating one...")
 	}
 }
 
-func configureSettings(promptLabel string, startingIndex int, items []*promptItem) (bool, error) {
+func configureSettings(promptLabel string, startingIndex int, items []*consts.PromptItem) (bool, error) {
 	doneID := "Done"
 
 	if len(items) > 0 && items[0].ID != doneID {
-		items = append([]*promptItem{{ID: doneID, Label: "Done"}}, items...)
+		items = append([]*consts.PromptItem{{ID: doneID, Label: "Done"}}, items...)
 	}
 
 	templates := &promptui.SelectTemplates{
@@ -128,7 +116,7 @@ func configureSettings(promptLabel string, startingIndex int, items []*promptIte
 
 	var promptResponse string
 
-	if selectedItem.PromptType == TextPrompt || selectedItem.PromptType == PasswordPrompt {
+	if selectedItem.PromptType == consts.TextPrompt || selectedItem.PromptType == consts.PasswordPrompt {
 		promptResponse, err = promptForInput(*selectedItem)
 
 		if err != nil {
@@ -139,7 +127,7 @@ func configureSettings(promptLabel string, startingIndex int, items []*promptIte
 		items[selectedIndex].Value = promptResponse
 	}
 
-	if selectedItem.PromptType == SelectPrompt {
+	if selectedItem.PromptType == consts.SelectPrompt {
 		promptResponse, err = prompForSelect(*selectedItem)
 
 		if err != nil {
@@ -153,7 +141,7 @@ func configureSettings(promptLabel string, startingIndex int, items []*promptIte
 	return configureSettings(promptLabel, selectedIndex, items)
 }
 
-func prompForSelect(item promptItem) (string, error) {
+func prompForSelect(item consts.PromptItem) (string, error) {
 	prompt := promptui.Select{
 		Label:        item.Label,
 		Items:        item.SelectOptions,
@@ -170,7 +158,7 @@ func prompForSelect(item promptItem) (string, error) {
 	return result, nil
 }
 
-func promptForInput(item promptItem) (string, error) {
+func promptForInput(item consts.PromptItem) (string, error) {
 	validate := func(input string) error {
 		if len(input) <= 0 {
 			return errors.New("error: input cannot be empty")
@@ -193,7 +181,7 @@ func promptForInput(item promptItem) (string, error) {
 		HideEntered: true,
 	}
 
-	if item.PromptType == PasswordPrompt {
+	if item.PromptType == consts.PasswordPrompt {
 		prompt.Mask = '*'
 	}
 

@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Thwani47/query-assistant/cmd/consts"
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -17,7 +19,9 @@ var GenerateCmd = &cobra.Command{
 	Short:   "Generate an application or a code snippet",
 	Aliases: []string{"g"},
 	Run: func(cmd *cobra.Command, args []string) {
-		client := openai.NewClient("") // TODO find a way to pass the key here (configure the CLI). also move this to a seperate file
+		apiKey := viper.GetString(consts.OpenAI_APIKey)
+		fmt.Println(apiKey)
+		client := openai.NewClient(viper.GetString(consts.OpenAI_APIKey))
 		response, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
 			Model: openai.GPT3Dot5Turbo,
 			Messages: []openai.ChatCompletionMessage{
