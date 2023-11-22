@@ -27,6 +27,7 @@ type promptItem struct {
 }
 
 var configFile string
+var configFileName string = "qa.config.yaml"
 
 // configCmd represents the config command
 var ConfigCmd = &cobra.Command{
@@ -53,14 +54,14 @@ var ConfigCmd = &cobra.Command{
 				viper.Set(config.ID, config.Value)
 			}
 		}
-		viper.WriteConfigAs("qa.config.yaml")
+		viper.WriteConfigAs(configFileName)
 	},
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	err := viper.WriteConfigAs("qa.config.yaml")
+	err := viper.WriteConfigAs(configFileName)
 
 	if err != nil {
 		fmt.Println(err)
